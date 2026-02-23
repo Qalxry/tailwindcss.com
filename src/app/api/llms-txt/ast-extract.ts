@@ -355,11 +355,11 @@ function extractCodeBlocksFromText(text: string): string {
         continue;
       }
 
-      line = line.replace(/<!--\s*\[!code[^\]]+\]\s*-->/g, "");
-      line = line.replace(/\/\*\s*\[!code[^\]]+\]\s*\*\//g, "");
-      line = line.replace(/#\s*\[!code[^\]]+\]/g, "");
-      line = line.replace(/\/\/\s*\[!code[^\]]+\]/g, "");
-      line = line.replace(/\[\!code[^\]]+\]/g, "");
+      line = line.replace(/<!--.*\[!code\b.*-->/g, "");
+      line = line.replace(/\/\*.*\[!code\b.*\*\//g, "");
+      line = line.replace(/#.*\[!code\b.*/g, "");
+      line = line.replace(/\/\/.*\[!code\b.*/g, "");
+      line = line.replace(/^\[!code\b.*$/g, "");
 
       line = line.replace(/<!--\s*prettier-ignore\s*-->/g, "");
       line = line.replace(/\/\*\s*prettier-ignore\s*\*\//g, "");
@@ -442,11 +442,11 @@ function cleanCodeBlock(node: any, renderChildren: (children: any[]) => string, 
       continue;
     }
 
-    line = line.replace(/<!--\s*\[!code[^\]]+\]\s*-->/g, "");
-    line = line.replace(/\/\*\s*\[!code[^\]]+\]\s*\*\//g, "");
-    line = line.replace(/#\s*\[!code[^\]]+\]/g, "");
-    line = line.replace(/\/\/\s*\[!code[^\]]+\]/g, "");
-    line = line.replace(/\[\!code[^\]]+\]/g, "");
+    line = line.replace(/<!--.*\[!code\b.*-->/g, "");
+    line = line.replace(/\/\*.*\[!code\b.*\*\//g, "");
+    line = line.replace(/#.*\[!code\b.*/g, "");
+    line = line.replace(/\/\/.*\[!code\b.*/g, "");
+    line = line.replace(/^\[!code\b.*$/g, "");
 
     line = line.replace(/<!--\s*prettier-ignore\s*-->/g, "");
     line = line.replace(/\/\*\s*prettier-ignore\s*\*\//g, "");

@@ -315,11 +315,15 @@ function cleanCodeAnnotations(code: string): string {
     .split("\n")
     .map((line) => {
       let original = line;
-      line = line.replace(/<!--\s*\[!code[^\]]+\]\s*-->/g, "");
-      line = line.replace(/\/\*\s*\[!code[^\]]+\]\s*\*\//g, "");
-      line = line.replace(/#\s*\[!code[^\]]+\]/g, "");
-      line = line.replace(/\/\/\s*\[!code[^\]]+\]/g, "");
-      line = line.replace(/\[!code[^\]]+\]/g, "");
+      line = line.replace(/<!--.*\[!code\b.*-->/g, "");
+      line = line.replace(/\/\*.*\[!code\b.*\*\//g, "");
+      line = line.replace(/#.*\[!code\b.*/g, "");
+      line = line.replace(/\/\/.*\[!code\b.*/g, "");
+      line = line.replace(/^\s*\[!code\b[^\n]*$/gm, "");
+      line = line.replace(/<!--\s*prettier-ignore\s*-->/g, "");
+      line = line.replace(/\/\*\s*prettier-ignore\s*\*\//g, "");
+      line = line.replace(/#\s*prettier-ignore/g, "");
+      line = line.replace(/\/\/\s*prettier-ignore/g, "");
       // If the line was only an annotation (now empty/whitespace), mark it
       if (original.trim().length > 0 && line.trim().length === 0) {
         return null; // Mark for removal
