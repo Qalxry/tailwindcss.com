@@ -9,7 +9,7 @@ export const dynamic = "force-static";
 export const revalidate = false;
 
 export async function GET() {
-  let output = "# Tailwind CSS Documentation\n\n";
+  let output = "Tailwind CSS Documentation\n\n";
   output +=
     "This file contains a concatenated, text-only version of all Tailwind CSS documentation pages, optimized for Large Language Model consumption.\n\n";
   output += "---\n\n";
@@ -43,7 +43,7 @@ export async function GET() {
       if (currentSection !== "") {
         output += "\n";
       }
-      output += `## ${section}\n\n`;
+      output += `# ${section}\n\n`;
       currentSection = section;
     }
 
@@ -114,8 +114,13 @@ async function processSlug(slug: string, title: string): Promise<string> {
       extractedText = lines.slice(startIndex).join("\n").trim();
     }
 
+    // Downgrade the headings in extractedText by one level (# -> ##, ## -> ###, etc.) to maintain the hierarchy of the document structure
+    extractedText = extractedText.replace(/^#{1,6}\s/gm, (match) => {
+      return "#" + match; // Add an extra # before each heading to downgrade it
+    });
+
     // Format the page
-    let pageOutput = `### ${pageTitle}\n\n`;
+    let pageOutput = `## ${pageTitle}\n\n`;
     if (description) {
       pageOutput += `${description}\n\n`;
     }

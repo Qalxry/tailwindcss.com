@@ -1,5 +1,4 @@
-import { parser, RuleType } from "markdown-to-jsx";
-import { astToMarkdown } from "markdown-to-jsx/markdown";
+import { parser, RuleType, astToMarkdown, type MarkdownCompilerOptions } from "markdown-to-jsx/markdown";
 
 const MEDIA_ELEMENTS = ["img", "svg", "video", "iframe", "picture", "source", "audio", "canvas", "embed", "object"];
 
@@ -75,8 +74,9 @@ export function extractTextFromMDX(mdxContent: string): string {
                 result += cleanCodeBlock(child, renderChildren, state);
                 result += "\n\n";
               } else if (child.tag && ["CodeExampleStack", "CodeExampleWrapper"].includes(child.tag)) {
-                result += extractComponentTextContent(child, renderChildren, state);
-                result += "\n\n";
+                if (child.text && child.text.includes("```")) {
+                  result += extractCodeBlocksFromText(child.text);
+                }
               }
             }
             return result.trim();
@@ -91,7 +91,11 @@ export function extractTextFromMDX(mdxContent: string): string {
         }
 
         if (["CodeExampleWrapper", "CodeExampleStack"].includes(tag)) {
-          return extractComponentTextContent(node, renderChildren, state);
+          // Parser may absorb the first code block into the opening tag's text property
+          if (node.text && node.text.includes("```")) {
+            return extractCodeBlocksFromText(node.text);
+          }
+          return "";
         }
 
         return "";
@@ -226,7 +230,7 @@ export function extractTextFromMDX(mdxContent: string): string {
       return next();
     };
 
-    let cleanMarkdown = astToMarkdown(ast, { renderRule });
+    let cleanMarkdown = astToMarkdown(ast, { renderRule } as MarkdownCompilerOptions);
     cleanMarkdown = cleanWhitespace(cleanMarkdown);
 
     let result = "";
@@ -327,6 +331,52 @@ function extractTargetingSpecificStatesText(node: any): string {
   let property = attrs.property || "utility";
   let variant = attrs.variant || "hover";
   return `\n\nPrefix a ${property} utility with a variant like ${variant}: to only apply the utility in that state.\n\n`;
+}
+
+function extractCodeBlocksFromText(text: string): string {
+  let result = "";
+  let codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+  let match;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    let lang = match[1] || "";
+    let code = match[2].trim();
+
+    // Clean code block content (same logic as cleanCodeBlock)
+    let lines = code.split("\n");
+    let filteredLines: string[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      let trimmed = line.trim();
+
+      let removeMatch = trimmed.match(/\[\!code\s+--(?::(\d+))?\]/);
+      if (removeMatch) {
+        let count = parseInt(removeMatch[1] || "1", 10);
+        i += count - 1;
+        continue;
+      }
+
+      line = line.replace(/<!--\s*\[!code[^\]]+\]\s*-->/g, "");
+      line = line.replace(/\/\*\s*\[!code[^\]]+\]\s*\*\//g, "");
+      line = line.replace(/#\s*\[!code[^\]]+\]/g, "");
+      line = line.replace(/\/\/\s*\[!code[^\]]+\]/g, "");
+      line = line.replace(/\[\!code[^\]]+\]/g, "");
+
+      line = line.replace(/<!--\s*prettier-ignore\s*-->/g, "");
+      line = line.replace(/\/\*\s*prettier-ignore\s*\*\//g, "");
+      line = line.replace(/#\s*prettier-ignore/g, "");
+      line = line.replace(/\/\/\s*prettier-ignore/g, "");
+
+      if (line.trim().length === 0 && trimmed.match(/\[\!code|prettier-ignore/)) {
+        continue;
+      }
+
+      filteredLines.push(line);
+    }
+
+    code = filteredLines.join("\n").trim();
+    result += `\`\`\`${lang}\n${code}\n\`\`\`\n\n`;
+  }
+  return result;
 }
 
 function extractComponentTextContent(node: any, renderChildren: (children: any[]) => string, state: any): string {
